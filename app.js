@@ -17,6 +17,10 @@ class App {
       this.handleFormClick(event);
     });
 
+    document.body.addEventListener('mouseover', event => {
+      this.openTooltip(event);
+    })
+
     this.$form.addEventListener('submit', event => {
       event.preventDefault();
       const title = this.$noteTitle.value;
@@ -32,6 +36,10 @@ class App {
       event.stopPropagation();
       this.closeForm();
     });
+  }
+
+  openTooltip(event) {
+    if (!event.target.matches('.toolbar-color')) return ;
   }
 
   handleFormClick(event) {
