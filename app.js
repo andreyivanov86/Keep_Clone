@@ -1,6 +1,6 @@
 class App {
   constructor() {
-    this.notes = [];
+    this.notes = JSON.parse(localStorage.getItem('notes')) || [];
     this.title = '';
     this.text = '';
     this.noteID = '';
@@ -16,7 +16,9 @@ class App {
     this.$modalTitle = document.querySelector('.modal-title');
     this.$modalText = document.querySelector('.modal-text');
     this.$modalCloseBtn = document.querySelector('.modal-close-button');
+    this.$colorTooltip = document.querySelector('#color-tooltip');
 
+    this.renderNotes();
     this.addEventListeners();
   }
 
@@ -25,11 +27,31 @@ class App {
       this.handleFormClick(event);
       this.selectNote(event);
       this.openModal(event);
+      this.deleteNote(event);
     });
 
-    // document.body.addEventListener('mouseover', event => {
-    //   this.openTooltip(event);
-    // })
+    document.body.addEventListener('mouseover', event => {
+      this.openTooltip(event);
+    });
+
+    document.body.addEventListener('mouseout', event => {
+      this.closeTooltip(event);
+    });
+
+    this.$colorTooltip.addEventListener('mouseover', function() {
+      this.style.display = 'flex';
+    })
+
+    this.$colorTooltip.addEventListener('mouseout', function() {
+       this.style.display = 'none';
+    });
+
+    this.$colorTooltip.addEventListener('click', event => {
+      const color = event.target.dataset.color;
+      if (color) {
+        this.editNoteColor(color);
+      }
+    });
 
     this.$form.addEventListener('submit', event => {
       event.preventDefault();
@@ -50,7 +72,7 @@ class App {
     this.$modalCloseBtn.addEventListener('click', event => {
       event.stopPropagation();
       this.closeModal();
-    })
+    });
   }
 
   selectNote(event) {
@@ -63,6 +85,7 @@ class App {
   }
 
   openModal(event) {
+    if (event.target.matches('.toolbar-delete')) return ;//prevent open model on delete button
     if (event.target.closest('.note')) {
       this.$modal.classList.toggle('open-modal');
       this.$modalTitle.value = this.title;
@@ -70,28 +93,43 @@ class App {
     }
   }
 
-  closeModal() {
-    this.editNote();
-    this.$modal.classList.toggle('open-modal');
+  closeModal(event) {
+      this.editNote();
+      this.$modal.classList.toggle('open-modal');
   }
 
   editNote() {
     const title = this.$modalTitle.value;
     const text = this.$modalText.value;
-
     // this.notes[Number(this.noteID) - 1].title  = title;
     // this.notes[Number(this.noteID) - 1].text  = text;
-
     this.notes = this.notes.map( note =>
         note.id === Number(this.noteID) ? {...note, title, text} : note
     );
+    this.renderNotes();
+  }
 
+  editNoteColor(color) {
+    this.notes = this.notes.map( note =>
+      note.id === Number(this.noteID) ? {...note, color} : note
+    );
     this.displayNotes();
   }
 
-  // openTooltip(event) {
-  //   if (!event.target.matches('.toolbar-color')) return ;
-  // }
+  openTooltip(event) {
+    if (!event.target.matches('.toolbar-color')) return ;
+    this.noteID = event.target.dataset.id;
+    const noteCoords = event.target.getBoundingClientRect();
+    const horizontal = noteCoords.left + window.scrollX;
+    const vertical = noteCoords.top + window.scrollY;
+    this.$colorTooltip.style.transform = `translate(${horizontal}px, ${vertical}px)`;
+    this.$colorTooltip.style.display = 'flex';
+  }
+
+  closeTooltip() {
+    if (event.target.matches('.toolbar-color')) return ;
+    this.$colorTooltip.style.display = 'none';
+  }
 
   handleFormClick(event) {
     const isFormClicked = this.$form.contains(event.target);
@@ -108,13 +146,13 @@ class App {
   }
 
   openForm() {
-    this.$form.classList.add('form-open');
+    this.$form.classList.toggle('form-open');
     this.$noteTitle.style.display = 'block';
     this.$formButtons.style.display = 'block';
   }
 
   closeForm() {
-    this.$form.classList.remove('form-open');
+    this.$form.classList.toggle('form-open');
     this.$noteTitle.style.display = 'none';
     this.$formButtons.style.display = 'none';
     this.$noteTitle.value = "";
@@ -131,9 +169,26 @@ class App {
 
     this.notes = [...this.notes, newNote];
 
-    this.displayNotes();
+    this.renderNotes();
     this.closeForm();
   };
+
+  deleteNote(event) {
+    event.stopPropagation(); //prevent bubbling
+    if (!event.target.matches('.toolbar-delete')) return ;
+    const id = event.target.dataset.id;
+    this.notes = this.notes.filter(note => note.id !== Number(id));
+    this.renderNotes();
+  }
+
+  renderNotes() {
+    this.displayNotes();
+    this.saveNotes();
+  }
+
+  saveNotes() {
+    localStorage.setItem('notes', JSON.stringify(this.notes));
+  }
 
   displayNotes() {
     this.$placeHolder.style.display = this.notes.length > 0 ? 'none' : 'flex';
@@ -143,12 +198,14 @@ class App {
         <div class="note-text">${note.text}</div>
         <div class="toolbar-container">
           <div class="toolbar">
-            <img class="toolbar-color" src="https://icon.now.sh/palette">
-            <img class="toolbar-delete" src="https://icon.now.sh/delete">
+            <img class="toolbar-color" data-id=${note.id} src="https://icon.now.sh/palette">
+            <img class="toolbar-delete" data-id=${note.id} src="https://icon.now.sh/delete">
           </div>
         </div>
       </div>`).join("");
   }
+
+  saveNoes
 }
 
 new App();
