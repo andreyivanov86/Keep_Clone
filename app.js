@@ -76,8 +76,16 @@ class App {
   }
 
   editNote() {
-    this.notes[Number(this.noteID) - 1].title  = this.$modalTitle.value;
-    this.notes[Number(this.noteID) - 1].text  = this.$modalText.value;
+    const title = this.$modalTitle.value;
+    const text = this.$modalText.value;
+
+    // this.notes[Number(this.noteID) - 1].title  = title;
+    // this.notes[Number(this.noteID) - 1].text  = text;
+
+    this.notes = this.notes.map( note =>
+        note.id === Number(this.noteID) ? {...note, title, text} : note
+    );
+
     this.displayNotes();
   }
 
